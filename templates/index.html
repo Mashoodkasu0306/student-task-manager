@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Task Manager</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f6f8; }
+    main { max-width: 520px; margin: 40px auto; background: #fff; padding: 24px; border-radius: 8px; }
+    form { display: flex; gap: 8px; }
+    input { flex: 1; padding: 8px; }
+    li { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee; align-items: center; }
+    li span { flex: 1; }
+    li.done span { text-decoration: line-through; color: #888; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Student Task Manager</h1>
+    <form id="form">
+      <input id="title" placeholder="Enter a task" required>
+      <button>Add</button>
+    </form>
+    <ul id="list"></ul>
+  </main>
+  <script>
+    const list = document.getElementById("list");
+    async function load() {
+      const tasks = await (await fetch("/api/tasks")).json();
+      list.innerHTML = "";
+      tasks.forEach(t => {
+        const li = document.createElement("li");
+        if (t.completed) li.className = "done";
+        const span = document.createElement("span");
+        span.textContent = t.title;
+        const done = document.createElement("button");
+        done.textContent = "Done";
+        done.onclick = async () => { await fetch("/api/tasks/" + t.id, {method: "PUT"}); load(); };
+        const del = document.createElement("button");
+        del.textContent = "Delete";
+        del.onclick = async () => { await fetch("/api/tasks/" + t.id, {method: "DELETE"}); load(); };
+        li.append(span, done, del);
+        list.appendChild(li);
+      });
+    }
+    document.getElementById("form").onsubmit = async e => {
+      e.preventDefault();
+      const input = document.getElementById("title");
+      await fetch("/api/tasks", {method: "POST", headers: {"Content-Type": "application/json"},
+                                 body: JSON.stringify({title: input.value})});
+      input.value = "";
+      load();
+    };
+    load();
+  </script>
+</body>
+</html>
